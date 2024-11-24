@@ -45,13 +45,28 @@ ClearDir(dest_dir)
 all_files = GetSourceFiles(source_dir)
 for src_file_name in all_files:
     src_file_path = os.path.join(source_dir, src_file_name)
+
+    #
+    # The file must pass various checks to be imported.
+    #
     file_qualification = QualifyFile(src_file_path)
     if not file_qualification["qualified"]:
         print(src_file_path, file_qualification["reason"])
         continue
 
+    #
+    # Get the file's date. It will be used to name the file's destination folder.
+    #
     file_date = GetFileDate(src_file_path)
     if file_date == "":
         print(src_file_path, "Error parsing file name")
         continue
+
+    dest_file_path = os.path.join(dest_dir, file_date)
+    if not os.path.isdir(dest_file_path):
+        try:
+            os.mkdir(dest_file_path)
+        except OSError:
+            print(src_file_path, "Error creating directory " + dest_file_path)
+            continue
     print("OK:", src_file_path, "-", file_date)
