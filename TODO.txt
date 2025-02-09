@@ -1,0 +1,4 @@
+Scan directory and classify all files. Identify files of unknown nature.
+
+Scan photo files and extract "camera maker" and "camera model" to help filter out unwanted photo sources.
+

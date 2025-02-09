@@ -2,8 +2,9 @@ import os
 import shutil
 
 # Importer parameters
-source_dir = "TestSrc"
-dest_dir = "TestDest"
+from defaults import *
+from utils import *
+
 
 def ClearDir(a_dir):
     if a_dir != dest_dir:
@@ -19,8 +20,6 @@ def ClearDir(a_dir):
     except OSError:
         print("Error occured clearing dir", a_dir)
 
-def GetSourceFiles(a_source_dir):
-    return os.listdir(a_source_dir)
 
 def QualifyFile(a_file):
 
@@ -90,6 +89,8 @@ def ImportPhonePhotos(a_source_dir, a_dest_dir):
         print("OK:", src_file_name, action_string)
 
 def main():
+    source_dir = default_source_dir
+    dest_dir = default_dest_dir
     ImportPhonePhotos(source_dir, dest_dir)
 
 if __name__ == "__main__":
