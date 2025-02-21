@@ -30,9 +30,9 @@ def QualifyFile(a_file):
     
     return {"qualified": True, "reason": ""}
 
-def GetFileDate(a_file):
-    _, file_name = os.path.split(a_file)
-    parts = file_name.split('_')
+# Extract the file date from PXL_########_#########_???.jpg
+def GetFileDate_PXL(a_filename):
+    parts = a_filename.split('_')
     # There must be at least 3 parts
     if len(parts) < 3:
         return ""
@@ -40,6 +40,26 @@ def GetFileDate(a_file):
     if len(file_date_str) != 8:
         return ""
     return file_date_str[:4] + "-" + file_date_str[4:6] + "-" + file_date_str[6:]
+
+# Extract the file date from IMG-########-???.jpg
+def GetFileDate_IMG(a_filename):
+    parts = a_filename.split('-')
+    # There must be at least 3 parts
+    if len(parts) < 3:
+        return ""
+    file_date_str = parts[1]
+    if len(file_date_str) != 8:
+        return ""
+    return file_date_str[:4] + "-" + file_date_str[4:6] + "-" + file_date_str[6:]
+
+def GetFileDate(a_file):
+    _, file_name = os.path.split(a_file)
+    file_date = ""
+    if file_name[:4] == "PXL_":
+        file_date = GetFileDate_PXL(file_name)
+    elif file_name[:4] == "IMG-":
+        file_date = GetFileDate_IMG(file_name)
+    return file_date
 
 def ImportPhonePhotos(a_source_dir, a_dest_dir):
     #ClearDir(dest_dir)
@@ -78,10 +98,14 @@ def ImportPhonePhotos(a_source_dir, a_dest_dir):
         dest_file_full_name = os.path.join(dest_file_path, src_file_name)
         action_string = "copied"
         if os.path.isfile(dest_file_full_name):
-            action_string = "overwritten"
+            if os.path.getsize(dest_file_full_name) == os.path.getsize(src_file_full_name):
+                action_string = "skipped"
+            else:
+                action_string = "overwritten"
         
         try:
-            shutil.copy2(src_file_full_name, dest_file_full_name)
+            if action_string != "skipped":
+                shutil.copy2(src_file_full_name, dest_file_full_name)
         except Exception as e:
             print(src_file_name, "Error copying file to", dest_file_path, ": " + e.strerror)
             continue

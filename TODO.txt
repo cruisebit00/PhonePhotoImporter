@@ -1,4 +1,6 @@
-Scan directory and classify all files. Identify files of unknown nature.
+v Scan directory and classify all files. Identify files of unknown nature.
+
+Don't overwrite files if name and size match.
 
 Scan photo files and extract "camera maker" and "camera model" to help filter out unwanted photo sources.
 
