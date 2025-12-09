@@ -3,7 +3,7 @@ import shutil
 import sys
 
 # Supporting libraries
-from PIL import Image
+#from PIL import Image
 
 # Importer parameters
 from defaults import *
@@ -65,6 +65,10 @@ def GetFileDate(a_file):
         file_date = GetFileDate_IMG(file_name)
     return file_date
 
+#######################################
+#
+# This function is the main coordinator of the workflow.
+#
 def ImportPhonePhotos(a_source_dir, a_dest_dir):
     #ClearDir(dest_dir)
     all_files = GetSourceFiles(a_source_dir)
@@ -125,24 +129,38 @@ Options:
     print(help_text)
     
 def main():
+    source_dir = None
+    dest_dir = None
     args = sys.argv[1:] # Skip script name
-
-    if not args:
-        print("No arguments passed.")
-        DisplayHelp()
-        return
     
-    for arg in args:
-        if arg in ("-h", "/h"):
+    argc = len(args)
+
+    if argc > 1:
+        print("Too many arguments. Max 1 expected. Aborting.")
+        return
+    elif argc == 1:
+        if args[0] in ("-h", "/h"):
             DisplayHelp()
             return
-        elif arg in ("-t", "/t"):
+        elif args[0] in ("-t", "/t"):
             source_dir = default_source_dir
-            dest_dir = default_dest_dir
+            dest_dir = default_test_dir
             print(">>> Testing mode ")
-            print(f"      From: {source_dir}")
-            print(f"        To: {dest_dir}")
-            ImportPhonePhotos(source_dir, dest_dir)
+        else:
+            print(f"Unrecognized argument: {args[0]}. Aborting.")
+            return
+    else:
+        source_dir = default_source_dir
+        dest_dir = default_destination_dir
+        input("Real copy! Press ENTER to continue, ^C to abort.")
+
+    # Ensure directories were set
+    assert source_dir is not None
+    assert dest_dir is not None
+
+    print(f"      From: {source_dir}")
+    print(f"        To: {dest_dir}")
+    ImportPhonePhotos(source_dir, dest_dir)
 
 if __name__ == "__main__":
     main()
