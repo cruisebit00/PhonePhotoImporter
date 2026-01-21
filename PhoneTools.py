@@ -1,7 +1,8 @@
 import win32com.client
 import os
+from typing import Iterable, Callable
 
-def list_android_photos():
+def list_android_photos(functions: Iterable[Callable[[str, int], None]]):
     print("Listing photos")
     # 1. Initialize the Windows Shell Application
     shell = win32com.client.Dispatch("Shell.Application")
@@ -41,8 +42,8 @@ def list_android_photos():
         if not found:
             print(f"Could not find folder: {folder_name}")
             return
-        
-    # 4. List the photo files
+
+    # 4. Run the input funciton on the photo files
     print(f"\nListing photos in {phone.Name}\\{'\\'.join(target_path)}:")
     extensions = ('.jpg', '.jpeg', '.png', '.mpeg', '.mov')
     for file in current_folder.Items():
@@ -60,15 +61,18 @@ def list_android_photos():
             file_size = 0
         
         files.append({"name": file.Name, "size": file_size})
+
+        for func in functions:
+            func(file.Name, file_size)
     
     return files
 
 
-if __name__ == "__main__":
-    file_list = list_android_photos()
+def display_file_details(a_name, a_size):
+    print(f"{a_name}: {a_size}")
 
-    for f in file_list:
-        print(f"{f["name"]}: {f["size"]}")
+if __name__ == "__main__":
+    file_list = list_android_photos({display_file_details})
 
     print(f"{len(file_list)} files.")
 
