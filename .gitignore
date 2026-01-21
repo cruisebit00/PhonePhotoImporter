@@ -1,4 +1,11 @@
 *.jpg
+*.exe
+*.spec
 __pycache__
 TestDest
 TestSrc
+*.toc
+*.zip
+*.pkg
+*.pyz
+*.html
