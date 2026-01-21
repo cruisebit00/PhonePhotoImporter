@@ -124,7 +124,7 @@ def DisplayHelp():
     help_text = """
 Options:
   -h, /h     Show this help message
-  -t, /t     Display "test"
+  -t, /t     Run in test mode
   """
     print(help_text)
     

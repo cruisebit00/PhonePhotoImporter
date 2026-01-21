@@ -8,4 +8,5 @@ TestSrc
 *.zip
 *.pkg
 *.pyz
+*.pyc
 *.html
