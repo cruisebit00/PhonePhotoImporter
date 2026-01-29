@@ -108,6 +108,14 @@ class AndroidPhone:
     ###########################
     # Copy file to local folder
     def copyFileToLocal(self, a_file_name, a_dest_path):
+        """
+        Docstring for copyFileToLocal
+        
+        :param self: Description
+        :param a_file_name: Name of file to copy.
+        :param a_dest_path: Path on local file system to copy the file to.
+        Returns True on success, False on error.
+        """
         if not self.__connected:
             print("Not connected.")
             return False

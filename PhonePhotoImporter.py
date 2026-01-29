@@ -8,6 +8,7 @@ import sys
 # Importer parameters
 from defaults import *
 from utils import *
+from PhoneTools import AndroidPhone
 
 
 # def ClearDir(a_dir):
@@ -120,6 +121,35 @@ def ImportPhonePhotos(a_source_dir, a_dest_dir):
 
         print("OK:", src_file_name, action_string)
 
+#######################################
+#
+# Copy photos from the phone to the stage folder
+#
+def CopyPhotosFromPhone(a_dest_folder):
+    num_skipped_files = 0;
+    num_copied_files = 0;
+    num_errors = 0;
+    phone = AndroidPhone()
+    file_list = phone.listFileNames()
+    for file_name in file_list:
+        # If the file already exists in the staging folder, skip the copy.
+        if os.path.exists(os.path.join(a_dest_folder, file_name)):
+            num_skipped_files += 1
+            continue
+
+        # Copy the file
+        success = phone.copyFileToLocal(file_name, a_dest_folder)
+        num_copied_files += success # Increment copied files if success
+        num_errors += not success   # Increment the number of errors if not success
+
+    print(f"Copied: {num_copied_files}    Skipped: {num_skipped_files}    Errors: {num_errors}")
+
+
+
+#######################################
+#
+# Display usage instructions
+#
 def DisplayHelp():
     help_text = """
 Options:
@@ -160,7 +190,12 @@ def main():
 
     print(f"      From: {source_dir}")
     print(f"        To: {dest_dir}")
-    ImportPhonePhotos(source_dir, dest_dir)
+
+    # Copy photos from the phone to the stage folder.
+    CopyPhotosFromPhone(source_dir)
+
+    # Sort the photos from the stage folder into the destinaiton folder.
+    #ImportPhonePhotos(source_dir, dest_dir)
 
 if __name__ == "__main__":
     main()
