@@ -1,6 +1,172 @@
 import win32com.client
+import time
 import os
 from typing import Iterable, Callable
+
+class AndroidPhone:
+    """
+    Properties:
+    phone
+    __photoFolder
+    __connected
+    __files
+    """
+    ###########################
+    # Constructor
+    def __init__(self):
+        self.__connected = False
+
+        # 1. Initialize the Windows Shell Application
+        shell = win32com.client.Dispatch("Shell.Application")
+
+        # 2. Access "This PC" (represented by the Shell Constant 17)
+        # This is the root where MTP devices (phones) appear
+        this_pc = shell.Namespace(17)
+
+        self.phone = None
+        # 3. Look for your phone in the list of "This PC" items
+        for item in this_pc.Items():
+            # Android phones usually appear with their model name
+            # We check if it's a folder-like object without a drive letter
+            if not os.path.exists(item.Path) and item.IsFolder:
+                self.phone = item
+                break
+
+        if not self.phone:
+            print("Android device not found. Ensure it's in 'File Transfer' mode.")
+            return
+        
+        self.__photoFolder = self.goToPhotoFolder()
+        self.__connected = True
+        print (f"Phone {self.phone.Name} initialized. At {self.__photoFolder.Title}.")
+        self.__files = self.listFileNames()
+        print(f"Found {len(self.__files)} files.")
+
+    ###########################
+    # Go to photo folder
+    def goToPhotoFolder(self):
+
+        # Specify location of camera photos
+        target_path = ["Internal shared storage", "DCIM", "Camera"]
+
+        # Start at the phone root
+        current_folder = self.phone.GetFolder
+
+        # Navigate through the subfolders
+        for folder_name in target_path:
+            found = False
+            for item in current_folder.Items():
+                if item.Name.lower() == folder_name.lower():
+                    current_folder = item.GetFolder
+                    found = True
+                    break
+            if not found:
+                print(f"Could not find folder: {folder_name}")
+                return
+        return current_folder
+
+
+    ###########################
+    # List files
+    def listFileNames(self):
+        files = []
+        if not self.__connected:
+            print("Not connected.")
+            return files
+        
+        extensions = ('.jpg', '.jpeg', '.png', '.mpeg', '.mov')
+        for file in self.__photoFolder.Items():
+            if file.Name.lower().startswith(".trashed"):
+                continue
+            if not file.Name.lower().endswith(extensions):
+                continue    
+            files.append(file.Name)
+        return files
+
+
+    ###########################
+    # Get file size
+    def getFileSize(self, a_file_name):
+        if not self.__connected:
+            print("Not connected.")
+            return 0
+        
+        # Find the file in the folder
+        file = self.__photoFolder.ParseName(a_file_name)
+
+        # This is more exact than current_folder.GetDetailsOf(file, 2)
+        exact_size = file.ExtendedProperty("System.Size")
+        file_size = 0
+        try:
+            file_size = int(exact_size)
+        except ValueError:
+            file_size = 0
+
+        return file_size
+
+
+    ###########################
+    # Copy file to local folder
+    def copyFileToLocal(self, a_file_name, a_dest_path):
+        if not self.__connected:
+            print("Not connected.")
+            return False
+        
+        # To copy files from an Android device (MTP) to a local folder using win32com, 
+        # you must use the Folder.CopyHere() method on the destination folder. 
+
+        # Since Android devices are not assigned drive letters, standard Python libraries 
+        # like shutil won't work; you must treat the destination as a Shell namespace.
+
+        # 1. Ensure the destination directory exists
+        if not os.path.exists(a_dest_path):
+            print(f"Folder '{a_dest_path}' does not exist on local drive.")
+            return False
+        
+        # 2. Get the FolderItem object for the file on the phone
+        file_item = self.__photoFolder.ParseName(a_file_name)
+        if not file_item:
+            print(f"File '{a_file_name}' not found on phone.")
+            return False
+        
+        # 3. Create a Shell folder object for the local destination
+        # NOTE: Reusing the same shell as the phone results in an error. Need a new shell.
+        shell = win32com.client.Dispatch("Shell.Application")
+        dest_folder = shell.NameSpace(os.path.abspath(a_dest_path))
+
+        # 4. Use CopyHere to pull the file from the phone to the PC
+        # Options: 
+        #    4 = No progress bar
+        #    8 = Automatically rename the file if the target name exists (FOF_RENAMEONCOLLISION)
+        #   16 = Respond "Yes to All" for dialogs 
+        #   64 = Preserve undo information (FOF_ALLOWUNDO)
+        #  128 = Perform operation only if a wildcard (*.*) is used (FOF_FILESONLY)
+        #  256 = Show progress dialog but hide file names (FOF_SIMPLEPROGRESS)
+        #  512 = Do not confirm new directory creation (FOF_NOCONFIRMMKDIR)
+        # 1024 = No UI on file copy errors
+        # 4096 = Copy only local files in a folder, disabling recursion (FOF_NORECURSION)
+        # Constants for readability
+        FOF_SILENT = 4
+        FOF_NOCONFIRMATION = 16
+        FOF_NOERRORUI = 1024
+        dest_folder.CopyHere(file_item, FOF_NOERRORUI + FOF_NOCONFIRMATION + FOF_SILENT)
+
+        # 5. Poll for completion.
+        # CopyHere() is asynchronous and there is no other way to know
+        # when it completed.
+        local_file = os.path.join(a_dest_path, a_file_name)
+        timeout = 30 # seconds
+        start = time.time()
+        while time.time() - start < timeout:
+            if os.path.exists(local_file):
+                return True
+            time.sleep(0.1)
+
+        print(f"Error copying file {a_file_name} to {a_dest_path}.")
+        return False
+
+
+
 
 def list_android_photos(functions: Iterable[Callable[[str, int], None]]):
     print("Listing photos")
@@ -72,9 +238,13 @@ def display_file_details(a_name, a_size):
     print(f"{a_name}: {a_size}")
 
 if __name__ == "__main__":
-    file_list = list_android_photos({display_file_details})
+    p = AndroidPhone()
+    file_list = p.listFileNames()
+    print(f"{file_list[3]} -- Size={p.getFileSize(file_list[3])}")
+    p.copyFileToLocal(file_list[3], r"C:\Users\alex_\Documents\Projects\PhonePhotoImporter\TestSrc")
 
-    print(f"{len(file_list)} files.")
+    # file_list = list_android_photos({display_file_details})
+    # print(f"{len(file_list)} files.")
 
 # """
 # From: https://gemini.google.com/app/92219b4d92bea73f
