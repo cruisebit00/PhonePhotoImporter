@@ -152,6 +152,12 @@ def CopyPhotosFromPhone(a_dest_folder):
 #
 def DisplayHelp():
     help_text = """
+Usage: python PhonePhotoImporter.py [action] [options]
+
+Actions:
+  copy       Copy photos from the phone to the staging folder
+  import     Sort photos from the staging folder into the destination
+
 Options:
   -h, /h     Show this help message
   -t, /t     Run in test mode
@@ -159,43 +165,55 @@ Options:
     print(help_text)
     
 def main():
-    source_dir = None
-    dest_dir = None
-    args = sys.argv[1:] # Skip script name
+    stage_dir = default_stage_dir
+    dest_dir = default_destination_dir
     
-    argc = len(args)
+    # Initialize variables to track user choice
+    action = None
+    is_test = False
 
-    if argc > 1:
-        print("Too many arguments. Max 1 expected. Aborting.")
-        return
-    elif argc == 1:
-        if args[0] in ("-h", "/h"):
+    # Process arguments
+    args = sys.argv[1:]
+    
+    if not args:
+        DisplayHelp()
+        return    
+
+    for arg in args:
+        if arg in ("-h", "/h"):
             DisplayHelp()
             return
-        elif args[0] in ("-t", "/t"):
-            source_dir = default_source_dir
+        elif arg in ("-t", "/t"):
+            is_test = True
             dest_dir = default_test_dir
-            print(">>> Testing mode ")
+        elif arg.lower() == "copy":
+            action = "copy"
+        elif arg.lower() == "import":
+            action = "import"
         else:
-            print(f"Unrecognized argument: {args[0]}. Aborting.")
+            print(f"Unrecognized argument: {arg}")
             return
-    else:
-        source_dir = default_source_dir
-        dest_dir = default_destination_dir
-        input("Real copy! Press ENTER to continue, ^C to abort.")
+        
+    if not action:
+        print("Error: You must specify an action ('copy' or 'import').")
+        return
+    
+    if is_test:
+        print(">>> Testing mode active")
+    elif action == "import":
+        input(f"Importing to {dest_dir}. Press ENTER to continue, ^C to abort.")
 
-    # Ensure directories were set
-    assert source_dir is not None
-    assert dest_dir is not None
+    print(f"     Stage: {stage_dir}")
+    print(f"      Dest: {dest_dir}")
 
-    print(f"      From: {source_dir}")
-    print(f"        To: {dest_dir}")
+    # Execute based on choice
+    if action == "copy":
+        print(f"Copying from phone to: {stage_dir}")
+        CopyPhotosFromPhone(stage_dir)
+    elif action == "import":
+        print(f"Importing from {stage_dir} to: {dest_dir}")
+        ImportPhonePhotos(stage_dir, dest_dir)
 
-    # Copy photos from the phone to the stage folder.
-    CopyPhotosFromPhone(source_dir)
-
-    # Sort the photos from the stage folder into the destinaiton folder.
-    #ImportPhonePhotos(source_dir, dest_dir)
 
 if __name__ == "__main__":
     main()

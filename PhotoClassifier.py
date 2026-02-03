@@ -50,7 +50,7 @@ def ClassifyPhotos(a_file_or_dir) -> List[Tuple[str, FileClass]]:
     return r
 
 def main():
-    source_dir = default_source_dir
+    source_dir = default_stage_dir
     r = ClassifyPhotos(source_dir)
     list(map(lambda x: print(x[0], x[1]), r) )
 
