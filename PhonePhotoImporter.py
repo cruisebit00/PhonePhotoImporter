@@ -10,6 +10,7 @@ import sys
 from defaults import *
 from utils import *
 from PhoneTools import AndroidPhone
+from PhotoClassifier import GetDateFromFolderName
 
 
 # def ClearDir(a_dir):
@@ -149,9 +150,11 @@ def CopyPhotosFromPhone(a_dest_folder):
 
 #######################################
 #
-# Find latest photo
+# Find the date of the latest folder.
 #
-def FindLatestPhoto(a_dir, must_have_underscore=True):
+# If must_have_underscore=True, only look at folder names that end with "_".
+#
+def DateOfLatestFolder(a_dir, must_have_underscore=True):
     # 1. Find the folder with the latest date
     # Pattern: yyyy-mm-dd_ (or yyyy-mm-dd if must_have_underscore is False)
     latest_folder = None
@@ -160,20 +163,16 @@ def FindLatestPhoto(a_dir, must_have_underscore=True):
     if not os.path.exists(a_dir):
         return None
 
-    # If underscores are on, look only for names ending with _.
-    # If underscores are off, look for all names, either ending or not ending with an underscore.
-    pattern_core = r"^(\d{4})-(\d{2})-(\d{2})"
-    pattern = f"{pattern_core}{'_' if must_have_underscore else '_?'}$"
-
     for item in os.listdir(a_dir):
         if os.path.isdir(os.path.join(a_dir, item)):
-            # Check if folder matches pattern
-            match = re.match(pattern, item)
-            if match:
-                folder_date = "".join(match.groups())
-                if folder_date > latest_folder_date:
-                    latest_folder_date = folder_date
-                    latest_folder = item
+            
+            if must_have_underscore and not item.endswith("_"):
+                continue
+
+            folder_date = GetDateFromFolderName(item)
+            if folder_date and folder_date > latest_folder_date:
+                latest_folder_date = folder_date
+                latest_folder = item
 
     return latest_folder_date
 
@@ -245,7 +244,7 @@ def main():
         CopyPhotosFromPhone(stage_dir)
     elif action == "import":
         print(f"Importing from {stage_dir} to: {dest_dir}")
-        lf = FindLatestPhoto(dest_dir, must_have_underscore=True)
+        lf = DateOfLatestFolder(dest_dir, must_have_underscore=True)
         print(lf)
         #ImportPhonePhotos(stage_dir, dest_dir)
 

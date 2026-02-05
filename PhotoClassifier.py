@@ -31,6 +31,16 @@ def isSimpleVideo(a_file) -> bool:
         return False
     return True
 
+# Extract the date from a folder name formatted as YYYY-MM-DD with an optional description
+# Returns the date as YYYYMMDD
+def GetDateFromFolderName(a_folder_name: str) -> str:
+    # Pattern matches dates (YYYY-MM-DD) optionally followed by a description.
+    # Examples: 2023-05-20, 2023-05-20_Party, 2023-05-20-Trip
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})(?:[_-][\w\-]*)?$", a_folder_name)
+    if m:
+        return "".join(m.groups())
+    return ""
+
 def ClassifyOneFile(a_file) -> Tuple[str, FileClass]:
     c = FileClass.UNKNOWN
     if isSimplePhoto(a_file):
