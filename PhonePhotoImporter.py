@@ -70,6 +70,56 @@ def GetFileDate(a_file):
 
 #######################################
 #
+# Syncs two directories based on name and size.
+#
+def sync_directories(reference_dir, update_dir):
+    """
+    Syncs the update_dir to match the reference_dir based on name and size.
+    Example usage:
+    sync_directories('./source_folder', './backup_folder')
+    """
+    # Ensure the update directory exists
+    if not os.path.exists(update_dir):
+        os.makedirs(update_dir)
+
+    ref_files = os.listdir(reference_dir)
+    upd_files = os.listdir(update_dir)
+
+    # 1. Process files from reference to update
+    for filename in ref_files:
+        ref_path = os.path.join(reference_dir, filename)
+        upd_path = os.path.join(update_dir, filename)
+
+        # Skip directories for this simple file-based implementation
+        if os.path.isdir(ref_path):
+            continue
+
+        ref_size = os.path.getsize(ref_path)
+
+        if filename in upd_files:
+            upd_size = os.path.getsize(upd_path)
+            
+            if ref_size == upd_size:
+                # Same name and same size - skip.
+                pass
+            else:
+                # Same name but different size - report!
+                print(f"REPORT: {filename} exists in both but sizes differ! "
+                      f"(Ref: {ref_size} bytes, Upd: {upd_size} bytes)")
+        else:
+            # File doesn't exist in update, so copy it.
+            # copy2 preserves metadata (like timestamps) - copy does not.
+            shutil.copy2(ref_path, upd_path)
+            print(f"Copied: {filename} to update directory.")
+
+    # 2. Report files that exist in update but NOT in reference
+    for filename in upd_files:
+        if filename not in ref_files:
+            print(f"REPORT: {filename} exists in update directory but not in reference.")
+
+
+#######################################
+#
 # This function is the main coordinator of the workflow.
 #
 def ImportPhonePhotos(a_source_dir, a_dest_dir):
@@ -189,6 +239,7 @@ Usage: python PhonePhotoImporter.py [action] [options]
 Actions:
   copy       Copy photos from the phone to the staging folder
   import     Sort photos from the staging folder into the destination
+  sync       Sync the staging folder into the destination
 
 Options:
   -h, /h     Show this help message
@@ -222,6 +273,8 @@ def main():
             action = "copy"
         elif arg.lower() == "import":
             action = "import"
+        elif arg.lower() == "sync":
+            action = "sync"
         else:
             print(f"Unrecognized argument: {arg}")
             return
@@ -247,6 +300,9 @@ def main():
         lf = DateOfLatestFolder(dest_dir, must_have_underscore=True)
         print(lf)
         #ImportPhonePhotos(stage_dir, dest_dir)
+    elif action == "sync":
+        print(f"Syncing {stage_dir} into {dest_dir}")
+        sync_directories(stage_dir, dest_dir)
 
 
 if __name__ == "__main__":
